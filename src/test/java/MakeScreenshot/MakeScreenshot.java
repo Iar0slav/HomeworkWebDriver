@@ -13,6 +13,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.fail;
 
@@ -26,6 +27,7 @@ public class MakeScreenshot {
     private String fileName;
     private String pathToStore;
     private String imageStored;
+    private int timeForWait;
 
     private final String TESTSTART          =   "Начало теста   ";
     private final String TESTFINISH         =   "Конец теста    ";
@@ -34,6 +36,10 @@ public class MakeScreenshot {
     @Before
     public void setUp() throws Exception {
         driver = new FirefoxDriver();
+        // не явное ожидание, по умолчанию
+        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        // явное ожидание
+        timeForWait = 15;
         baseUrl = "http://en.wikipedia.org/";
         searchElementByXpath = ".//*[@id='mp-itn-img']/div/a/im";
         searchElementByXpathOk = ".//*[@id='mp-itn-img']/div/a/img";
@@ -53,7 +59,7 @@ public class MakeScreenshot {
         // явным ожиданием проверяем наличие элемента с которым будем работать
         // проверка идет каждые 500мс но не больше установленного времени
         try {
-            element = (new WebDriverWait(driver, 10))
+            element = (new WebDriverWait(driver, timeForWait))
                     .until(ExpectedConditions.presenceOfElementLocated(By.xpath(searchElementByXpath)));
         } catch (Exception e){
             // если элемент не найден сообщаем об этом
@@ -99,7 +105,7 @@ public class MakeScreenshot {
         // явным ожиданием проверяем наличие элемента с которым будем работать
         // проверка идет каждые 500мс но не больше установленного времени
         try {
-            element = (new WebDriverWait(driver, 5))
+            element = (new WebDriverWait(driver, timeForWait))
                     .until(ExpectedConditions.presenceOfElementLocated(By.xpath(searchElementByXpathOk)));
         } catch (Exception e){
             // если элемент не найден сообщаем об этом
