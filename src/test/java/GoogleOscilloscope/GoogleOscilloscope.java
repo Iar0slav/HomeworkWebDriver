@@ -32,21 +32,19 @@ public class GoogleOscilloscope {
             searchString,
             searchElement,
             nextButton,
-            pageString,
-            pageCut;
-    private int timeForWait, count;
+            pageNumber;
+    private int timeForWait;
+    private boolean stopTest;
 
-
-    boolean stopTest;
-    private final String TESTSTART          = "Начало теста   ";
-    private final String TESTFINISH         = "Конец теста    ";
-    private final String ELEMENTNOTFOUND    = "Искомый элемент не найден: ";
-    private final String FOUND              = "Совпадение найдено на странице: ";
-    private final String NOTFOUND           = "Совпадение не найдено";
-    private final String BANNED             = "Banned by Google :)";
-    private final String IMAGESTORED        = "Изображение успешно сохранено";
-    private final String FILENAME           = "screenshot.png";
-    private final String PATHTOSTORE        = "OUTPUT\\GoogleOscilloscope\\" + FILENAME;
+    private final String TESTSTART = "Начало теста   ";
+    private final String TESTFINISH = "Конец теста    ";
+    private final String ELEMENTNOTFOUND = "Искомый элемент не найден: ";
+    private final String FOUND = "Совпадение найдено на странице: ";
+    private final String NOTFOUND = "Совпадение не найдено";
+    private final String BANNED = "Banned by Google :)";
+    private final String IMAGESTORED = "Изображение успешно сохранено";
+    private final String FILENAME = "screenshot.png";
+    private final String PATHTOSTORE = "OUTPUT\\GoogleOscilloscope\\" + FILENAME;
 
     @Before
     public void setUp() throws Exception {
@@ -55,11 +53,8 @@ public class GoogleOscilloscope {
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         // явное ожидание
         timeForWait = 15;
-        // счет страниц
-        count = 1;
         // остановка теста
         stopTest = false;
-
         // описание єлементов страниц
         searchValue = "осциллограф";
         baseUrl = "https://www.google.com.ua/?gws_rd=ssl";
@@ -70,10 +65,9 @@ public class GoogleOscilloscope {
         shadingElement = "flyr";
         searchResults = "//div[@class =\"srg\"]/div[last()]";
         searchString = "srg";
-        searchElement = "vvit\\.ua[\\s\\S]*$";
+        searchElement = "electronoff\\.ua[\\s\\S]*$";
         nextButton = "pnnext";
-        pageString = "resultStats";
-        pageCut = "страница\\s\\d\\d?";
+        pageNumber = ".//*[@id='nav']/tbody/tr/td[@class='cur']";
     }
 
     @Test
@@ -101,17 +95,17 @@ public class GoogleOscilloscope {
             driver.findElement(By.name(googleSearchBtnK)).click();
         }
 
-
         do {
             // ждем пока уйдет затеняющий эфект со страницы
             new WebDriverWait(driver, 5).until(ExpectedConditions.invisibilityOfElementLocated(By.id(shadingElement)));
 
             // проверяем гуглобан
+            // под вопросом, пока не получилось проверить
             try {
                 testElement = null;
                 testElement = (new WebDriverWait(driver, 5))
                         .until(ExpectedConditions.visibilityOfElementLocated(By.id(keyboard)));
-            } catch (Exception e){
+            } catch (Exception e) {
                 System.out.println(BANNED);
             }
             // если элемент не найден - корректно завершаем тест
@@ -132,40 +126,25 @@ public class GoogleOscilloscope {
                 // если найдено совпадение, останавливаем тест
                 stopTest = true;
                 // выводим номер страницы
-                System.out.println(FOUND + driver.findElement(By.xpath(".//*[@id='nav']/tbody/tr/td[@class='cur']")).getText());
+                System.out.println(FOUND + driver.findElement(By.xpath(pageNumber)).getText());
                 //Получение скрина всей страницы
                 File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
                 FileUtils.copyFile(screenshot, new File(PATHTOSTORE));
                 System.out.println(IMAGESTORED);
-
-                // парсим номер страницы
-//                Pattern p = Pattern.compile(pageCut);
-//                Matcher m = p.matcher(driver.findElement(By.id(pageString)).getText());
-//                if (m.find()) {
-//                    System.out.println(m.group(0));
-//                }
-//                System.out.println(driver.findElement(By.xpath(".//*[@id='nav']/tbody/tr/td[@class='cur']")).getText());
             } else {
                 try {
                     testElement = null;
                     testElement = (new WebDriverWait(driver, timeForWait))
                             .until(ExpectedConditions.elementToBeClickable(By.id(nextButton)));
-
-                    // Если все хорошо то увеличиваем счетчик страницы с результатами
-                    count++;
-
                     // нажимаем на кнопку Дальше
                     driver.findElement(By.id(nextButton)).click();
-
                 } catch (Exception e) {
                     // если элемент не найден сообщаем об этом
                     stopTest = true;
                     System.out.println(NOTFOUND);
                 }
             }
-
         } while (!stopTest);
-
         // получаем название теста и выводим информацию о его окончании
         System.out.println(TESTFINISH + new Object() {
         }.getClass().getEnclosingMethod().getName());
@@ -189,8 +168,7 @@ public class GoogleOscilloscope {
         }
     }
 
-    private WebElement explicitWait(WebDriver driver, By by, int timeForWait){
-
+    private WebElement explicitWait(WebDriver driver, By by, int timeForWait) {
         // явным ожиданием проверяем наличие элемента с которым будем работать
         // проверка идет каждые 500мс но не больше установленного времени
         try {
@@ -201,7 +179,6 @@ public class GoogleOscilloscope {
             // если элемент не найден сообщаем об этом
             System.out.println(ELEMENTNOTFOUND + by.toString());
         }
-
         return explicitWaitElement;
     }
 }
