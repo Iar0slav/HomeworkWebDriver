@@ -127,8 +127,8 @@ public class MakeScreenshot {
         int eleWidth = element.getSize().getWidth();
         int eleHeight = element.getSize().getHeight();
 
-        //Обрезка скрина всей страницы до размера элемента
-        BufferedImage eleScreenshot = fullImg.getSubimage(point.getX(), point.getY(), eleWidth, eleHeight);
+        //Обрезка скрина всей страницы до размера элемента + 5 пикселей по кругу
+        BufferedImage eleScreenshot = fullImg.getSubimage(point.getX()-5, point.getY()-5, eleWidth+10, eleHeight+10);
         ImageIO.write(eleScreenshot, "png", screenshot);
 
         //Сохранение скрина элемента
