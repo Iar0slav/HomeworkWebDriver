@@ -6,14 +6,21 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.openqa.selenium.*;
+import org.openqa.selenium.Point;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
 
 import static org.junit.Assert.fail;
 
@@ -65,7 +72,7 @@ public class GoogleOscilloscope {
         shadingElement = "flyr";
         searchResults = "//div[@class =\"srg\"]/div[last()]";
         searchString = "srg";
-        searchElement = "electronoff\\.ua[\\s\\S]*$";
+        searchElement = "zapisnyh\\.narod\\.ru[\\s\\S]*$";
         nextButton = "pnnext";
         pageNumber = ".//*[@id='nav']/tbody/tr/td[@class='cur']";
     }
@@ -129,6 +136,13 @@ public class GoogleOscilloscope {
                 System.out.println(FOUND + driver.findElement(By.xpath(pageNumber)).getText());
                 //Получение скрина всей страницы
                 File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+                // подготовка скрина для выделения результата
+                BufferedImage fullImg = ImageIO.read(screenshot);
+                // выделяем результат
+                fullImg = drawRectangle(fullImg);
+                // подготовка к сохранению
+                ImageIO.write(fullImg, "png", screenshot);
+                // сохраняем в файл
                 FileUtils.copyFile(screenshot, new File(PATHTOSTORE));
                 System.out.println(IMAGESTORED);
             } else {
@@ -181,4 +195,60 @@ public class GoogleOscilloscope {
         }
         return explicitWaitElement;
     }
+
+    // отрисовка прямоугольника выделения
+    private BufferedImage drawRectangle(BufferedImage bufferedImage){
+
+        // получение нужного элемента в списке пезультатов
+        WebElement elementForSelect = driver.findElement(By.xpath(".//*[@class='srg']/div" + findPositionOfElement() + "/div"));
+
+        //Получение расположения элемента на странице
+        Point point = elementForSelect.getLocation();
+        //Получение высоты и ширины элемента
+        int eleWidth = elementForSelect.getSize().getWidth();
+        int eleHeight = elementForSelect.getSize().getHeight();
+        // рисовалка
+        Graphics2D g2d = bufferedImage.createGraphics();
+        // подложка из исходного изображения
+        g2d.drawImage(bufferedImage, 0, 0, null);
+        // цвет кисти
+        g2d.setColor(Color.red);
+        // рисуем прямоугольник
+        g2d.draw(new Rectangle2D.Double(point.getX()-5, point.getY()-5, eleWidth+10, eleHeight+10));
+        // соеденяем подложку и рисунок
+        g2d.dispose();
+
+        return bufferedImage;
+    }
+
+    // нахождение порядкового номера нужного элемента в списке выдачи
+    private String findPositionOfElement(){
+        int i = 0;
+
+        List<WebElement> foundSearchResults = driver.findElements(By.className("rc"));
+
+        Pattern search = Pattern.compile(searchElement);
+
+        Iterator <WebElement> iterator = foundSearchResults.iterator();
+        int temp = 0;
+        while (iterator.hasNext()){
+            temp++;
+            WebElement searchItem = iterator.next();
+            Matcher result = search.matcher(searchItem.getText());
+            if (result.find()) {
+                i = temp;
+            }
+        }
+
+        String result;
+
+        if (i == 1){
+            result = "";
+        } else {
+            result = "[" + Integer.toString(i) + "]";
+        }
+
+        return result;
+    }
+
 }
